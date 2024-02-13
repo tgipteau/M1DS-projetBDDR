@@ -1,0 +1,30 @@
+*** 13 fev ***
+
+    J'ai créé le projet Django.
+    Il est configuré pour postgre, penser à modifier "settings.py" au besoin (extrait ci-dessous). Noter le port
+    inhabituel (pas 5432, déjà pris chez moi) à modifier aussi au besoin :
+
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql_psycopg2',
+                'NAME': 'enron_db',
+                'USER': 'postgres',
+                'PASSWORD': 'postgres',
+                'HOST': 'localhost',
+                'PORT': '5433',
+                }
+        }
+
+    L'application enron_app gère pour l'instant les tables employés et adresses mail.
+    Avec le script "peuplement_xml.py", un parser xml remplit ces deux tables à partir
+    du fichier "employes_enron.xml".
+
+    NOTA : le chemin vers le xml est renseigné au début de "peuplement_xml.py". Il est essentiel de le
+    renseigner pour utiliser le script.
+
+    A venir :
+            - Construire la table "Message" pour les messages. Comment gérer les receveurs multiples ? Relation MtM ?
+            - Construire un parser pour les fichiers mails. Quelles informations receuillir ?
+
+
+
