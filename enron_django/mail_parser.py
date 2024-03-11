@@ -49,9 +49,8 @@ else :
 # SUBJECT
 capt = regex_subject.search(raw)
 subject = capt.group(1)
-print(subject)
+mail.subject = subject
 
-if 
 
 
 
@@ -60,3 +59,4 @@ print(f"{receivers=}")
 print(f"{mail.id=}")
 print(f"{mail.date=}")
 print(f"{mail.sender=}")
+print(f"{mail.subject=}")

@@ -38,6 +38,7 @@ for employee in root :
 
 	e = Employee()
 	mails = []
+	employeetomail = []
 
 	if len(employee.attrib) > 0 :
 		e.category = employee.attrib['category']
@@ -63,8 +64,11 @@ for employee in root :
 
 	e.save()
 	for mail in mails :
-		mail.employee_id = e
+		etom = EmployeetoMailadress()
 		mail.save()
+		etom.employee_id = e
+		etom.mailadress_id = mail
+		etom.save()
 
 
 

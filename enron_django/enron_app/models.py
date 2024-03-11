@@ -14,17 +14,24 @@ class Employee(models.Model) :
 class MailAdress(models.Model) :
 
 	address = models.EmailField(unique= True, null=True)
-	employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+
+class Conversation(models.Model) :
 
 
 class Message(models.Model) :
 	JM_id = models.CharField(max_length=30, unique=True) # Identifiant JavaMail
 	date = models.DateTimeField()
-	sender = models.ForeignKey(Employee, )
+	sender = models.ForeignKey(Employee, on_delete=models.CASCADE)
 	subject = models.CharField(max_length=150)
 	path = models.CharField(max_length=150)
+
 
 
 class EmployeetoMessage(models.Model):  # table de jointure Employés <-> Messages
 	employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
 	message_id = models.ForeignKey(Message, on_delete=models.CASCADE)
+
+
+class EmployeetoMailadress(models.Model):  # table de jointure Employés <-> MailAdress
+	employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+	mailadress_id = models.ForeignKey(MailAdress, on_delete=models.CASCADE)
