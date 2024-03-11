@@ -26,5 +26,22 @@
             - Construire la table "Message" pour les messages. Comment gérer les receveurs multiples ? Relation MtM ?
             - Construire un parser pour les fichiers mails. Quelles informations receuillir ?
 
+*** 11 mars ***
 
+    Pas de nouvelles depuis un moment oups. Je modifie le schéma : on n'avait pas pris en compte que certaines adresses
+    mails ne sont pas à un.e employé.e en particulier, mais sont des listes de distributions par exemple.
+    Avec l'ajout d'une table de jointure, on a maintenant une relation MtM Employee <-> MailAdress.
+    Toutes les adresses sont associées à au moins une personne comme auparavant, mais à parfois plusieurs.
+    Il n'y a pas de distinction au final entre les adresses personnelles et les adresses "liste de distribution".
+    Faut-il y remédier, je ne pense pas actuellement.
+
+    DONC modification des tables anciennes qui sont à droper, modification de peuplement_xml qui doit faire avec la
+    table de jointure, modification de enron_app évidemment.
+
+    Toujours en train d'avancer sur le mail_parser, qui se complique. Commment déterminer proprement une conversation ?
+    Comment également construire la table des messages ? Besoin de faire de manière récursive pour référencer des
+    messages pas encore parsés, ou bien peut-on y aller comme une brute ?
+
+    Le mail parser en tout cas est prêt, il reste à faire une fouille du dossier maildir et d'utiliser la
+    fonction mailParser sur chacun pour remplir la db.
 
