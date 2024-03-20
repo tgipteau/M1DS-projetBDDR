@@ -1,5 +1,5 @@
 import datetime
-import re
+import re, os
 
 from enron_app.models import *
 
@@ -9,43 +9,44 @@ maildir_path = "/Users/thibautgipteau/M1DS/SEMESTRE 2/Bases de Données/ProjetBD
 regex_id = re.compile("Message-ID: <(.*?\..*?)\.")
 regex_date = re.compile("Date: (.*) -")
 regex_sender = re.compile("From: (.*)")
-regex_receiver = re.compile(r"To: (.*)\nSubject")
+regex_receiver = re.compile(r"To: (.*)\nSubject", re.DOTALL)
 regex_cc = re.compile(r"Cc: (.*)\nMime")
 regex_subject = re.compile("Subject:(.*)")
-regex_content = re.compile(r"X-FileName: (.*?)\n(.*)", re.DOTALL) # inutilisé dans le script de peuplement
+regex_content = re.compile(r"X-FileName: (.*?)\n(.*)", re.DOTALL)  # inutilisé dans le script de peuplement
 
 
-def mailParser(file):
+def mailParser(file_path):
 
-	f = open(file)
-	raw = f.read()
-	message = Message()
+	print("DEBUG : CURRENT FILE IS ", file_path)
 
+	try:
+		f = open(file_path, 'r')
+		raw = f.read()
+		message = Message()
+		message.path = file_path
+	except UnicodeDecodeError:
+		print('ERREUR ENCODING, à ', file_path)
 
-
-	### ID
-	capt = regex_id.search(raw)
-	message.JM_id = capt.group(1)
-
-
+	# Chez qui on est ?? :
+	capt = re.search(r"maildir/(.*?)/", file_path) # on capte le maildir courant
+	employee = Employee.objects.get(mailbox = capt.group(1)) # à quel employé il correspond ?
+	emp_to_mail = EmployeetoMailadress.objects.get(employee_id = employee) # quelles adresses lui appartiennent ?
+	local_adress = emp_to_mail.mailadress_id # on en prend une ; attention c'est une instance, pas une string
+	print(f"{local_adress.address=}")
 
 	### DATE
 	capt = regex_date.search(raw)
 	date = datetime.datetime.strptime(capt.group(1), "%a, %d %b %Y %H:%M:%S")
 	message.date = date
 
-
-
 	### SENDER
 	capt = regex_sender.search(raw)
 	sending_adress = capt.group(1)
 
-	# si la sending_adress est déjà dans la db.MailAdress, on relie :
 	try :
-		sender = MailAdress.objects.get(adress=sending_adress)
+		sender = MailAdress.objects.get(address=sending_adress)
 		message.sender = sender
 
-	# si elle n'existe pas, on créé une nouvelle instance de MailAdress pour la contenir
 	except MailAdress.DoesNotExist :
 		nouvelle_adresse = MailAdress()
 		nouvelle_adresse.address = sending_adress
@@ -53,44 +54,86 @@ def mailParser(file):
 		message.sender = nouvelle_adresse
 
 
-
 	### SUBJECT
 	capt = regex_subject.search(raw)
 	subject = capt.group(1)
 	message.subject = subject
 
-
-
 	### SAUVEGARDE DU MESSAGE
 	message.save()
 
+	### RECEIVERS --- table de jointure !!! -> le message doit déjà être enregistré dans la db (on vient donc de le save)
 
+	receivers = []
 
-	# RECEIVERS --- table de jointure !!! -> le message doit déjà être enregistré dans la db (on vient de le save)
+	## Etape 1 : récupérer la liste des mails receveurs
 
-	# Etape 1 : récupérer la liste des mails receveurs
+	# point technique pour récupérer les multilignes, du format "adresse, adresse, \n\t adresse"
 	capt = regex_receiver.search(raw)
-	to = capt.group(1).split(",")
-	capt = regex_cc.search(raw)
+	if capt is not None : # s'il y a bien un "To"
+		to = capt.group(1).split() # split dégage les espaces, tabs, retours...
+		if len(to) > 1 : # s'il y a plusieurs adresses dans "To"
+			for i, adress in enumerate(to[:-1]): # on retire les virgules des n-1 premiers matchs
+				to[i] = adress[:-1]
+		receivers += to # on ajoute les adresses de "To" aux receveurs
 
-	if capt is None:
-		receivers = to
-	else:
+	else : # # si capt is None, il n'y a pas de "To"
+		receivers.append(local_adress.address) # on met une adresse de la personne qu'on fouille à la place
+
+
+	capt = regex_cc.search(raw) # on essaie de capter les "Cc"
+	if capt is not None : # s'il y en a
 		cc = capt.group(1).split(",")
-		receivers = to + cc
+		receivers += cc # on les ajoute aux receveurs
 
-	# Etape 2: En faire ressortir la liste des employés receveurs et créer la jointure
-	for r_adress in receivers :
-		adress_instance = MailAdress.objects.get(adress=r_adress)
-		etom = EmployeetoMailadress.objects.get(mailadress_id=adress_instance)
-		employee = etom.employee_id
+	print(f"{receivers=}")
 
-		jointure = EmployeetoMessage()
-		jointure.employee_id = employee
-		jointure.message_id = message
-		jointure.save()
+	## Etape 2: En faire ressortir la liste des employés receveurs et créer la jointure
 
-	"""il va y avoir des erreurs "DoesNotExist" à cause des listes de distribution !!!!!!!!!!! """
+	for iter_adress in receivers:
+		print("DEBUG : ADRESS IS ", iter_adress)
+
+		try:
+			adress_instance = MailAdress.objects.get(address=iter_adress)
+			print(f"{adress_instance.id=}")
+
+			try :
+				etom = EmployeetoMailadress.objects.get(mailadress_id=adress_instance)
+				employee = etom.employee_id
+
+				jointure = EmployeetoMessage()
+				jointure.employee_id = employee
+				jointure.message_id = message
+				jointure.save()
+
+			# sans ce "try" : imaginons qu'une adresse "non-employé" envoie à une adresse "non-employé" qui a été
+			# enregistrée en tant que sender. Dans ce cas, on chercherait ici à relier cette adresse, bien existante,
+			# à personne -> erreur
+			except EmployeetoMailadress.DoesNotExist :
+				pass
+
+		except MailAdress.DoesNotExist:  # si l'adresse n'existe pas, on ne peut pas la relier à un employé
+			pass  # donc, c'est une liste de distribution. On ignore (pour le moment ?)
+
+
+"""debugfile = "/Users/thibautgipteau/M1DS/SEMESTRE 2/Bases de Données/ProjetBDDR/Ressources/maildir/arnold-j/notes_inbox/3."
+f = open(debugfile, 'r')
+raw = f.read()
+capt = regex_receiver.search(raw)
+to = capt.group(1).split()
+for i, adress in enumerate(to[:-1]) :
+	to[i] = adress[:-1]
+	print(adress)
+
+print(to)"""
 
 
 
+""""""
+# walk+parsing à travers maildir
+
+for root, dirs, files in os.walk(maildir_path):
+	for file in files:
+		if not file == '.DS_Store':
+			mailParser(os.path.join(root, file))
+""""""

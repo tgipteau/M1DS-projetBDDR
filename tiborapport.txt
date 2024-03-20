@@ -42,6 +42,30 @@
     Comment également construire la table des messages ? Besoin de faire de manière récursive pour référencer des
     messages pas encore parsés, ou bien peut-on y aller comme une brute ?
 
-    Le mail parser en tout cas est prêt, il reste à faire une fouille du dossier maildir et d'utiliser la
+    Le mail parser en tout cas est prêt à débugger, il reste à faire une fouille du dossier maildir et d'utiliser la
     fonction mailParser sur chacun pour remplir la db.
 
+*** 19-20-21 mars ***
+
+Je fais des ajustements au mail parser face aux mauvaises suprises.
+
+1 - il fallait revoir la regex/capture des receuveurs, qui ne marchait pas quand c'était du multiligne.
+
+2 - problème avec certains mails : l'employé qui a le mail dans son dossier n'apparaît pas toujours dans
+        la liste des receveurs (pas en tant que mail nominatif) parce qu'il le reçoit en tant que copropriétaire
+        d'une adresse mail commune ( du genre "lespatrons@enron.com"). Mais, il y a plusieurs adresses receveurs :
+        impossible de savoir à laquelle l'employé appartient ! donc malheureusement pas moyen de lier ces adresses
+        non-nominatives à des employés.
+
+3 - cas très bizarre : je tombe sur un mail (arnold john/notes inbox/67) qui n'a pas de "To" ! D'abord, je vois qu'il
+    y a souvent écrit l'adresse de l'employé dont on regarde le dossier, ce n'est pas comme si elle n'apparaissait
+    pas habituellement.
+    Mais en fait, puisqu'ils ont plusieurs adresses, il est possible qu'on leur ait envoyé par plusieurs de leurs
+    adresses. Dans ce cas, l'adresse "en cours" ne s'affiche en fait jamais. Donc il faut l'entrer automatiquement
+    dans la création de l'itération message. Je pars donc de ce postulat, et je me permet de choisir une de leurs
+    adresses comme receveuse. Ce qui compte c'est avant tout QUI reçoit, et pas laquelle de ses adresses.
+
+4 - Je remarque que certaines adresses n'étaient pas référencées par le xml, par exemple johnarnold@enron.com.
+    Il est évident que c'est de John Arnold qu'il s'agit, mais je ne peux pas automatiser cette reconnaissance...
+
+Ici je m'arrête : le parser des receveurs tronque quand il y a un seul receveur et capte n'importe quoi
