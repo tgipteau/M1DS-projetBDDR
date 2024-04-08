@@ -11,23 +11,25 @@ class Employee(models.Model) :
 	mailbox = models.CharField(max_length=150, unique=True, null=True)
 
 
-class MailAdress(models.Model) :
+class MailAddress(models.Model) :
 
 	address = models.EmailField(unique= True, null=True)
+	internal = models.BooleanField(default=False)
+
 
 class Message(models.Model) :
-	#JM_id = models.CharField(max_length=30, unique=True) # Identifiant JavaMail
+	JM_id = models.CharField(max_length=50, unique=True, null=True) # Identifiant JavaMail pour éviter les doublons
 	date = models.DateTimeField()
-	sender = models.ForeignKey(MailAdress, on_delete=models.CASCADE)
+	sender = models.ForeignKey(MailAddress, on_delete=models.CASCADE)
 	subject = models.CharField(max_length=150)
 	path = models.CharField(max_length=300)
 
 
-class EmployeetoMessage(models.Model):  # table de jointure Employés <-> Messages
-	employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
-	message_id = models.ForeignKey(Message, on_delete=models.CASCADE)
+class AddresstoMessage(models.Model):  # table de jointure MailAdress <-> Messages pour les receuveurs multiples
+	mailaddress = models.ForeignKey(MailAddress, on_delete=models.CASCADE)
+	message = models.ForeignKey(Message, on_delete=models.CASCADE)
 
 
-class EmployeetoMailadress(models.Model):  # table de jointure Employés <-> MailAdress
-	employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
-	mailadress_id = models.ForeignKey(MailAdress, on_delete=models.CASCADE)
+class EmployeetoMailaddress(models.Model):  # table de jointure Employés <-> MailAdress
+	employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+	mailaddress = models.ForeignKey(MailAddress, on_delete=models.CASCADE)

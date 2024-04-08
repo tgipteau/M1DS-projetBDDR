@@ -49,8 +49,9 @@ for employee in root :
 
 		if ligne.tag == 'email' :
 
-			mail = MailAdress()
+			mail = MailAddress()
 			mail.address = ligne.attrib['address']
+			mail.internal = True
 			mails.append(mail)
 
 		elif ligne.tag == 'lastname' :
@@ -64,10 +65,10 @@ for employee in root :
 
 	e.save()
 	for mail in mails :
-		etom = EmployeetoMailadress()
+		etom = EmployeetoMailaddress()
 		mail.save()
-		etom.employee_id = e
-		etom.mailadress_id = mail
+		etom.employee = e
+		etom.mailaddress = mail
 		etom.save()
 
 

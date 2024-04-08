@@ -68,4 +68,41 @@ Je fais des ajustements au mail parser face aux mauvaises suprises.
 4 - Je remarque que certaines adresses n'étaient pas référencées par le xml, par exemple johnarnold@enron.com.
     Il est évident que c'est de John Arnold qu'il s'agit, mais je ne peux pas automatiser cette reconnaissance...
 
-Ici je m'arrête : le parser des receveurs tronque quand il y a un seul receveur et capte n'importe quoi
+
+!!!
+    Il faut que je remplace la table employeeToMessage par la table mailadressToMessage. C'est bête de passer
+    par employee, puisque certains mails ne vont pas aux employés.
+!!!
+
+
+En fait le XML est très peu exhaustif. Il y a encore un dossier dans maildir qui n'y est pas référencé :
+phanis-s, qui appartient à Stephanie Panus, alors qu'il y a déjà un dossier panus-s.
+
+C'est fou, vu qu'il y a 149 employee référencés et 150 mailbox, a priori il n'y a que stephanie qui pose problème.
+J'ai juste rangé le dossier phanis-s dans panus-s et ça marche, "mdr" si je peux me permettre.
+
+INQUIETUDES :
+
+     Pas encore trouvé de quoi déterminer des conversations...
+
+     Les mails formeront sans doute des doublons, s'ils sont envoyés à plusieurs employés, rien n'empêche
+     qu'il y ait le même mail dans deux dossiers différents.
+
+
+*** 8 avril ***
+
+Plus de soucis avec les doublons, géré par javamail_id
+D'après des sources internet de ges qui ont aussi travaillé avec les mêmes données, on est bon : on finit avec 517401
+mails uniques, ce qui a l'air d'être correct
+
+En testant la jointure et en regardant quelques minutes à la main si les liens sont bien faits, ça a l'air de coller.
+
+Pour ce qui est de définir les conversations, je pense que ça se fera plutôt dans un second temps, au lieu d'être inclut
+dans le script de peuplement.
+
+Il reste le temps d'exécution du script, qui tourne plus de vingt minutes chez moi !!
+Je compte l'améliorer dans les prochaines semaines, mais c'est une simple question d'optimisation.
+Déjà sans doute, tronquer le "open read" pour ne prendre que l'en tête du mail. C'est possible que les regexs
+continuent de chercher dans tout le mail même après avoir trouvé un match dans l'entête, ce qui voudrait dire que chaque
+mail est lu beaucoup de fois.
+Découper en blocs fonctions quelques étapes pourrait aussi améliorer le temps.
