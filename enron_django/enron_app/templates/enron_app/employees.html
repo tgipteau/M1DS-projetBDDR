@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <title> EA - Employés </title>
+        <style>
+            table.mon_tableau  {
+            border-collapse: collapse;
+            }
+
+            table.mon_tableau td {
+               border: 1px solid #5555;
+               padding: 0.3em;
+               font-family: "Sans-serif";
+               font-size: 12px;
+            }
+
+            table.mon_tableau tr:nth-child(even)  {
+            background: #EEE
+            }
+
+            table.mon_tableau tr:nth-child(odd) {
+            background: #FFF
+            }
+        </style>
+    </head>
+
+    <body>
+        <a href="./">Accueil</a>
+        <h1> EMPLOYEES </h1>
+
+        <table class="mon_tableau">
+            <th>ID</th>
+            <th>NOM</th>
+            <th>FONCTION</th>
+            <th>MAILBOX</th>
+            {% for employee in employees %}
+                <tr>
+                    <td>{{employee.id}}</td>
+                    <td><strong>{{employee.nom}}</strong> {{employee.prenom}}</td>
+                    <td>{{employee.category}}</td>
+                    <td>{{employee.mailbox}}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+    </body>
+</html>
+
+
