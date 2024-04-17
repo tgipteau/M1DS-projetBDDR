@@ -25,8 +25,9 @@
             <tr>
                 <td>{{message.id}}</td>
                 <td>{{message.date}}</td>
-                <td><a href="">{{message.subject}}</a></td>
+                <td>{{message.subject}}</td>
                 <td>{{message.sender.address}}</td>
+                <td><a href="{% url 'show_message' message.id %}"> -> VIEW </a></td>
             </tr>
             {% endfor %}
         </table>

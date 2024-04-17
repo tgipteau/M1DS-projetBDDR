@@ -87,8 +87,19 @@ def threshold_sort(request) :
 
 	return render(request, 'enron_app/threshold_view.html', context)
 
-def show_message(request) :
+def show_message(request, message_id) :
 
-	render(request, 'enron_app/accueil.html')
+	print(message_id)
+	path = Message.objects.get(id = message_id).path
+	print(path)
+
+	f = open(path, 'r')
+	contenu = f.read()
+
+	context = {
+		'contenu': contenu
+	}
+
+	return render(request, 'enron_app/showmessage.html', context)
 
 
