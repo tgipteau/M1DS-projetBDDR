@@ -8,15 +8,21 @@ from enron_app.models import *
 maildir_path = "/Users/thibautgipteau/M1DS/SEMESTRE 2/Bases de Données/ProjetBDDR/Ressources/maildir"
 
 # COMPILATION DES REGEX
+
+regex_entete = re.compile("(.*?)^X-", re.DOTALL | re.MULTILINE)
 regex_id = re.compile("Message-ID: <(.*?\..*?)\.")
 regex_date = re.compile("Date: (.*) -")
 regex_sender = re.compile("From: (.*)")
-regex_receiver = re.compile(r"To: (.*?)\nSubject", re.DOTALL)
-regex_cc = re.compile(r"Cc: (.*)\nMime")
-regex_subject = re.compile("Subject:(.*)")
-regex_content = re.compile(r"X-FileName: (.*?)\n(.*)", re.DOTALL)  # inutilisé dans le script de peuplement
+regex_receiver = re.compile(r"^To: (.*?)\nSubject", re.DOTALL | re.MULTILINE)
+regex_cc = re.compile(r"^Cc: (.*)\nMime")
+regex_subject = re.compile("Subject:(.*?)")
 regex_internal = re.compile(r".*@enron")
 regex_javamail_id = re.compile(r"Message-ID: <(.*?).JavaMail.evans@thyme>")
+
+def get_entete(raw) :
+	capt = regex_entete.search(raw)
+	entete = capt.group(1)
+	return entete
 
 def internalMailCheck(addresse) :
 	# mini script vérifiant si les adresses sont internes lors de la création d'instances de MailAddress
@@ -34,7 +40,6 @@ def deja_vu(testdate, testsubject, testsender) :
 		print("deja vu")
 		return True
 	except Message.DoesNotExist :
-		print("NOUVEAU")
 		return False
 
 def getJmId(raw) :
@@ -97,6 +102,17 @@ def getReceivers(raw, local_address) :
 			print("to =", to)
 			for i, address in enumerate(to[:-1]):  # on retire les virgules des n-1 premiers matchs
 				to[i] = address[:-1]
+
+		i=0
+		while i < len(to) : # gestion des receveurs faussés de type "email <.marco@enron.com>"
+			if to[i] == 'e-mai' :
+				print("MAIL BIZZARE")
+				to.pop(i+1)
+				to.pop(i)
+			else :
+				i+=1
+
+		print("new to : ", to)
 		receivers += to  # on ajoute les adresses de "To" aux receveurs
 
 	capt = regex_cc.search(raw)  # on essaie de capter les "Cc"
@@ -104,10 +120,7 @@ def getReceivers(raw, local_address) :
 		cc = capt.group(1).split(",")
 		receivers += cc  # on les ajoute aux receveurs
 
-	print(f"{receivers=}")
-
-	returned_receivers = []
-	returned_receivers.append(local_address)
+	returned_receivers = [local_address]
 
 	for iter_address in receivers:
 		print("DEBUG : ADRESS IS ", iter_address)
@@ -115,51 +128,72 @@ def getReceivers(raw, local_address) :
 
 	return returned_receivers
 
+
+def defineMesssageType(receivers):
+	"""à partir des expéditeurs, receveurs ; définit le type de message
+	(interne/externe, interne/interne, mixte...)
+	renvoie 1 si internes, 2 si externes, 3 si mixtes"""
+
+	receiver_internal = False
+	receiver_external = False
+
+	for receiver in receivers :
+		receiver_internal = receiver_internal | receiver.internal
+		receiver_external = receiver_external | (not receiver.internal)
+
+	if receiver_internal & (not receiver_external) :
+		return 1 # que receveurs internes
+	elif receiver_external & receiver_internal :
+		return 3 # mixte, receveurs internes et externes
+
 def mailParser(file_path):
 
-	#print("DEBUG : CURRENT FILE IS ", file_path)
 
-	# ouverture du fichier
-	try:
-		f = open(file_path, 'r', encoding='latin-1')
-		raw = f.read()
+		print("DEBUG : CURRENT FILE IS ", file_path)
 
-	except UnicodeDecodeError as e:
-		print('ERREUR ENCODING, à ', file_path)
-		print(e)
+		# ouverture du fichier
+		try:
+			f = open(file_path, 'r', encoding='latin-1')
+			raw = f.read()
+			raw = get_entete(raw)
+			print("RAW", raw)
 
-	date = getDate(raw)
-	subject = getSubject(raw)
-	sender = getSender(raw)
+		except UnicodeDecodeError as e:
+			print('ERREUR ENCODING, à ', file_path)
+			print(e)
 
-	if not deja_vu(date, subject, sender) :
+		date = getDate(raw)
+		subject = getSubject(raw)
+		sender = getSender(raw)
 
-		message = Message()
-		message.path = file_path
-		message.JM_id = getJmId(raw)
-		message.date = date
-		message.subject = subject
-		message.sender = sender
-		message.save()
+		if not deja_vu(date, subject, sender) :
 
-		# Chez qui on est ? :
-		capt = re.search(r"maildir/(.*?)/", file_path) # on capte le maildir courant
-		employeelocal = Employee.objects.get(mailbox = capt.group(1)) # à quel employé il correspond ?
-		emp_to_mail = EmployeetoMailaddress.objects.filter(employee = employeelocal)[0] # quelles adresses lui appartiennent ?
-		local_address = emp_to_mail.mailaddress # on en prend une ; attention c'est une instance, pas une string
-		print(f"{local_address.address=}")
+			message = Message()
+			message.path = file_path
+			message.JM_id = getJmId(raw)
+			message.date = date
+			message.subject = subject
+			message.sender = sender
 
-		receivers = getReceivers(raw, local_address)
-		message.receivers = receivers
 
-		# creéation de la jointure
+			# Chez qui on est ? :
+			capt = re.search(r"maildir/(.*?)/", file_path) # on capte le maildir courant
+			employeelocal = Employee.objects.get(mailbox = capt.group(1)) # à quel employé il correspond ?
+			emp_to_mail = EmployeetoMailaddress.objects.filter(employee = employeelocal)[0] # quelles adresses lui appartiennent ?
+			local_address = emp_to_mail.mailaddress # on en prend une ; attention c'est une instance, pas une string
 
-		for receiver in receivers :
+			receivers = getReceivers(raw, local_address)
+			message.type = defineMesssageType(receivers)
 
-			jointure = AddresstoMessage()
-			jointure.mailaddress = receiver
-			jointure.message = message
-			jointure.save()
+			message.save()
+
+			# création de la jointure
+			for receiver in receivers :
+
+				jointure = AddresstoMessage()
+				jointure.mailaddress = receiver
+				jointure.message = message
+				jointure.save()
 
 
 start_time = time.time()
@@ -169,4 +203,8 @@ for root, dirs, files in os.walk(maildir_path):
 		if not file == '.DS_Store':
 			mailParser(os.path.join(root, file))
 
-print("--- %m minutes %s seconds ---" % (time.time() - start_time))
+
+# nettoyage
+
+
+print("---%s seconds ---" % (time.time() - start_time))

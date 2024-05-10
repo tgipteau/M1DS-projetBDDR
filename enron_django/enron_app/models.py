@@ -23,6 +23,11 @@ class Message(models.Model) :
 	sender = models.ForeignKey(MailAddress, on_delete=models.CASCADE)
 	subject = models.CharField(max_length=150)
 	path = models.CharField(max_length=300)
+	type = models.IntegerField(default=0)
+	""" valeurs de "type" :
+	1 - receveurs internes seulement (@enron)
+	3 - les deux (de l'externe ET de l'interne)
+	"""
 
 
 class AddresstoMessage(models.Model):  # table de jointure MailAdress <-> Messages pour les receuveurs multiples

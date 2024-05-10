@@ -106,3 +106,23 @@ Déjà sans doute, tronquer le "open read" pour ne prendre que l'en tête du mai
 continuent de chercher dans tout le mail même après avoir trouvé un match dans l'entête, ce qui voudrait dire que chaque
 mail est lu beaucoup de fois.
 Découper en blocs fonctions quelques étapes pourrait aussi améliorer le temps.
+
+
+Ajouter dans mail_parser et dans les tables une propriété de type Interne/externe sur les messsages directement.
+Beaucoup de requêtes nécessitent de faire une différence entre les messages internes externes, or c'est seulement
+ inscrit dans mailadress pour le moment. Passer par la table de jointure à chaque fois rend ça affreux.
+ DONC ajout d'une colonne "type" à expliquer : 1 : interne-interne, 2: interne/externe 3 : les deux.
+ Le 3, c'est pour les mails envoyés/reçus à la fois par des internes "@enron" et des externes.
+
+
+ Quel enfer, certains mails ont des "To : email <.machin@enron.com>"
+ sachant que l'adresse y est incomplète. On se débarasse de ces mails intraitables.
+
+Déjà il y a un prétraitement qui dégage les ces receveurs là, qui sont irrecevables (aha)
+Mais aussi, je met en place une séquence nettoyage, qui dégage les addresses mails qui ne contiennent pas "@".
+Il y en a 150 environ à dégager simplement
+
+Peut-être que cette phase de nettoyage permettrait de remplacer pas mal de code pouyr accélérer le peuplement,
+mais il n'y a pas le temps de s'y coller et je ne suis pas sûr que ça soit si important. C'est quand même moins propre
+comme méthode que celle consistant à faire des meilleures regex etc..
+

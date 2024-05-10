@@ -22,31 +22,31 @@ def employees_table(request):
 					  'employees': employees
 				  })
 
-def threshold_sort(request) :
+def basic_mining(request) :
 
 	print("new request")
 
 	if request.method == 'POST' :
 
 		print("method POST")
-		form = Threshold_sort_form(request.POST)
+		form = Basic_mining_form(request.POST)
 
 	else :
 
 		print("method ELSE")
 
-		form = Threshold_sort_form(initial={
-			'fromDate': '1997-01-01',
-			'toDate': '1997-11-27',
+		form = Basic_mining_form(initial={
+			'fromDate': '1999-01-01',
+			'toDate': '1999-04-01',
 			'type': 1,
 			'sentBy': None
 			})
 
-	fromDate = request.POST.get('fromDate','1997-01-01')
+	fromDate = request.POST.get('fromDate','1999-01-01')
 	fromDate = datetime.datetime.strptime(fromDate, '%Y-%m-%d').date()
 	print(f"{fromDate=}")
 
-	toDate = request.POST.get('toDate','1997-11-27')
+	toDate = request.POST.get('toDate','1999-04-01')
 	toDate = datetime.datetime.strptime(toDate, '%Y-%m-%d').date()
 	print(f"{toDate=}")
 
@@ -85,7 +85,7 @@ def threshold_sort(request) :
 		'messages': messages
 	}
 
-	return render(request, 'enron_app/threshold_view.html', context)
+	return render(request, 'enron_app/basicmining.html', context)
 
 def show_message(request, message_id) :
 
@@ -101,5 +101,66 @@ def show_message(request, message_id) :
 	}
 
 	return render(request, 'enron_app/showmessage.html', context)
+
+def seuils(request) :
+
+	if request.method == 'POST' :
+
+		print("method POST")
+		form = Seuils_form(request.POST)
+
+	else :
+
+		print("method ELSE")
+
+		form = Seuils_form(initial={
+			'fromDate': '1999-01-01',
+			'toDate': '1999-04-01',
+			'type': 1,
+			})
+
+	fromDate = request.POST.get('fromDate', '1999-01-01')
+	fromDate = datetime.datetime.strptime(fromDate, '%Y-%m-%d').date()
+
+	toDate = request.POST.get('toDate', '1999-04-01')
+	toDate = datetime.datetime.strptime(toDate, '%Y-%m-%d').date()
+
+	type_number = int(request.POST.get('type', 1))
+
+	if type_number == 3 : # si internes+externes, query générale (plus rapide)
+		table = Employee.objects.raw(
+			f"select e.id as id, e.nom as nom, count(m.id) as compte\n"
+			f"from enron_app_message m, enron_app_employee e, enron_app_employeetomailaddress j\n"
+			f"where j.mailaddress_id = m.sender_id and e.id = j.employee_id\n"
+			f"and date between \'{fromDate}\'and \'{toDate}\'\n"
+			f"group by e.id\n"
+			f"order by compte DESC\n"
+		)
+
+	else :
+		if type_number == 1 :
+			choix = "TRUE" # on veut les internes : "where internal = TRUE"
+		elif type_number == 2 :
+			choix = "FALSE" # on veut les externes : where interal = FALSE"
+
+		table = Employee.objects.raw(
+			f"select e.id as id, e.nom as nom, count(m.id) as compte\n"
+			f"from enron_app_message m, enron_app_employee e, enron_app_employeetomailaddress j\n"
+			f"where j.mailaddress_id = m.sender_id and e.id = j.employee_id\n"
+			f"and date between \'{fromDate}\'and \'{toDate}\'\n"
+			f"group by e.id\n"
+			f"order by compte DESC\n"
+		)
+
+
+
+
+	context = {
+		'form' : form,
+		'table' : table
+	}
+
+	return render(request, 'enron_app/seuils.html', context)
+
 
 
