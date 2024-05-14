@@ -1,0 +1,39 @@
+<html>
+    <head>
+        <title> EA - Interactions </title>
+        <style>
+
+        </style>
+    </head>
+
+    <body>
+        <a href="./">Accueil</a>
+        <h1> INTERACTIONS </h1>
+
+        <form action="" method="POST">
+            {% csrf_token %}
+            {{form}}
+            <input type="submit" value="Submit">
+        </form>
+
+        <table>
+            <th>EMPLOYEE A</th>
+            <th>EMPLOYEE B</th>
+            <th>FROM A TO B</th>
+            <th>FROM B TO A</th>
+            <th>TOTAL INTERACTION</th>
+            {% for ligne in table %}
+            <tr>
+                <td>{{ligne.0}}</td>
+                <td>{{ligne.1}}</td>
+                <td>{{ligne.2}}</td>
+                <td>{{ligne.3}}</td>
+                <td>{{ligne.4}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+
+    </body>
+
+</html>

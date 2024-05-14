@@ -128,7 +128,6 @@ def getReceivers(raw, local_address) :
 
 	return returned_receivers
 
-
 def defineMesssageType(receivers):
 	"""à partir des expéditeurs, receveurs ; définit le type de message
 	(interne/externe, interne/interne, mixte...)
@@ -145,6 +144,36 @@ def defineMesssageType(receivers):
 		return 1 # que receveurs internes
 	elif receiver_external & receiver_internal :
 		return 3 # mixte, receveurs internes et externes
+
+def populateInteractions(sender, receivers, date, message):
+	""" Peuple la tabe "interactions"
+	Identifie si le'envoyeur est un employé. Dans ce cas, regarde chaque receveur.
+	Si le receveur est un employé, on créé une instance qui relate leur interaction.
+	Ne retourne rien.
+	"""
+	try :
+		empToMail = EmployeetoMailaddress.objects.get(mailaddress = sender)
+
+		A = empToMail.employee
+		for B in receivers :
+			try :
+				empToMail = EmployeetoMailaddress.objects.get(mailaddress=B)
+				B = empToMail.employee
+				print(A.nom)
+				print(B.nom)
+				instance = Interactions()
+				instance.date = date
+				instance.emp_a = A
+				instance.emp_b = B
+				instance.message = message
+				instance.save()
+			except EmployeetoMailaddress.DoesNotExist :
+				pass
+
+	except EmployeetoMailaddress.DoesNotExist :
+			return 0
+
+	return 0
 
 def mailParser(file_path):
 
@@ -194,6 +223,8 @@ def mailParser(file_path):
 				jointure.mailaddress = receiver
 				jointure.message = message
 				jointure.save()
+
+			populateInteractions(sender, receivers, date, message)
 
 
 start_time = time.time()

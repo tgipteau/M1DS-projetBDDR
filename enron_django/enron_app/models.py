@@ -23,7 +23,7 @@ class Message(models.Model) :
 	sender = models.ForeignKey(MailAddress, on_delete=models.CASCADE)
 	subject = models.CharField(max_length=150)
 	path = models.CharField(max_length=300)
-	type = models.IntegerField(default=0)
+	type = models.IntegerField(default=3)
 	""" valeurs de "type" :
 	1 - receveurs internes seulement (@enron)
 	3 - les deux (de l'externe ET de l'interne)
@@ -38,3 +38,10 @@ class AddresstoMessage(models.Model):  # table de jointure MailAdress <-> Messag
 class EmployeetoMailaddress(models.Model):  # table de jointure Employés <-> MailAdress
 	employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
 	mailaddress = models.ForeignKey(MailAddress, on_delete=models.CASCADE)
+
+
+class Interactions(models.Model):
+	emp_a = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='sender')
+	emp_b = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='receiver')
+	date = models.DateTimeField()
+	message = models.ForeignKey(Message, on_delete=models.CASCADE)

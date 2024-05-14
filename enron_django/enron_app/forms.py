@@ -24,10 +24,20 @@ class Seuils_form(forms.Form) :
    fromDate = forms.DateField()
    toDate = forms.DateField()
 
+   CHOIXENVOUREC = [
+      (1, 'Envoyés'),
+      (2, 'Reçus'),
+   ]
+   envOuRec = forms.ChoiceField(
+      widget=forms.RadioSelect,
+      choices= CHOIXENVOUREC,
+      initial=None
+   )
+
    CHOIX = [
       (1, 'Internes'),
-      (2, 'Externes'),
-      (3, 'Internes+Externes')
+      (2, 'Externes+Internes'),
+      (3, 'Externes')
    ]
    type = forms.ChoiceField(
       widget=forms.RadioSelect,
@@ -35,4 +45,12 @@ class Seuils_form(forms.Form) :
       initial=None
    )
 
+class Interactions_form(forms.Form) :
+
+   fromDate = forms.DateField()
+   toDate = forms.DateField()
+   seuil = forms.IntegerField()
+
+   focusOption = forms.BooleanField(initial=False, required= False)
+   focusOn = forms.CharField(max_length= 50, initial='Dasovich', required=False)
 

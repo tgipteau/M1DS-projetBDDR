@@ -7,5 +7,6 @@ urlpatterns = [
     path('', views.accueil, name="accueil"),
     path('basicmining', views.basic_mining, name = 'basic_mining'),
     path('message/<int:message_id>/', views.show_message, name = "show_message"),
-    path('seuils', views.seuils, name = 'seuils')
+    path('seuils', views.seuils, name = 'seuils'),
+    path('interactions', views.interactions, name = 'interactions')
 ]
