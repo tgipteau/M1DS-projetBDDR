@@ -15,7 +15,7 @@ regex_date = re.compile("Date: (.*) -")
 regex_sender = re.compile("From: (.*)")
 regex_receiver = re.compile(r"^To: (.*?)\nSubject", re.DOTALL | re.MULTILINE)
 regex_cc = re.compile(r"^Cc: (.*)\nMime")
-regex_subject = re.compile("Subject:(.*?)")
+regex_subject = re.compile("Subject:(.*?)\n")
 regex_internal = re.compile(r".*@enron")
 regex_javamail_id = re.compile(r"Message-ID: <(.*?).JavaMail.evans@thyme>")
 
@@ -58,6 +58,7 @@ def getSubject(raw) :
 	""" renvoie le sujet au format string"""
 	capt = regex_subject.search(raw)
 	subject = capt.group(1)
+	print(f"{subject=}")
 	return subject
 
 def getSender(raw) :
@@ -130,8 +131,8 @@ def getReceivers(raw, local_address) :
 
 def defineMesssageType(receivers):
 	"""à partir des expéditeurs, receveurs ; définit le type de message
-	(interne/externe, interne/interne, mixte...)
-	renvoie 1 si internes, 2 si externes, 3 si mixtes"""
+	(interne, externe, mixte...)
+	renvoie 1 si internes, 3 si mixtes"""
 
 	receiver_internal = False
 	receiver_external = False

@@ -1,13 +1,16 @@
+from django.http import HttpResponse
 from django.shortcuts import render
 
-import datetime
 
-# pandas et numpy pour le tableau croisé de Interactions
+import datetime
 import numpy as np
-import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
 from .models import *
-from .querytools import *
 from .forms import *
 
 # Create your views here.
@@ -93,9 +96,7 @@ def basic_mining(request) :
 
 def show_message(request, message_id) :
 
-	print(message_id)
 	path = Message.objects.get(id = message_id).path
-	print(path)
 
 	f = open(path, 'r')
 	contenu = f.read()
@@ -190,7 +191,6 @@ def seuils(request) :
 
 	return render(request, 'enron_app/seuils.html', context)
 
-
 def interactions(request) :
 
 	if request.method == 'POST' :
@@ -248,7 +248,7 @@ def interactions(request) :
 
 
 			total = fromBtoA+fromAtoB
-			table.append([employee_a.nom, employee_b.nom, fromAtoB, fromBtoA, total])
+			table.append([employee_a, employee_b, fromAtoB, fromBtoA, total])
 
 	# nettoyage de la table
 	# nettoyage par Seuil
@@ -268,7 +268,7 @@ def interactions(request) :
 		i = 0
 		while i < len(table):
 			print(f"{table[i][0]=}")
-			if table[i][0] != focusOn and table[i][1] != focusOn :
+			if table[i][0].nom != focusOn and table[i][1].nom != focusOn :
 				table.pop(i)
 			else:
 				i += 1
@@ -279,9 +279,105 @@ def interactions(request) :
 	context = {
 		'form': form,
 		'table' : table,
+		'fromDate' : fromDate,
+		'toDate' : toDate,
 	}
 
 	return render(request, 'enron_app/interactions.html', context)
 
+def conversation(request, employee_a_id, employee_b_id) :
 
+	interaction1 = Interactions.objects.filter(emp_a_id=employee_a_id, emp_b_id=employee_b_id)
+	interaction2 = Interactions.objects.filter(emp_a_id=employee_b_id, emp_b_id=employee_a_id)
+
+	messages = []
+	for i in interaction1 :
+		messages.append(i.message)
+	for i in interaction2:
+		messages.append(i.message)
+
+	messages.sort(key= lambda message: message.date)
+
+	context = {
+		'messages': messages
+	}
+
+	return render(request, 'enron_app/conversation.html', context)
+
+
+def achalandage(request) :
+
+	# récupération du formulaire
+	if request.method == 'POST' :
+		print("method POST")
+		form = Achalandage_form(request.POST)
+
+	# cadre initial du formulaire
+	else :
+		form = Achalandage_form(initial={
+			'fromDate': '2001-01-01',
+			'toDate': '2001-04-01',
+			'type': 3,
+			'bulkBy' : 1,
+			})
+
+	# traitement des données du formulaire
+	fromDate = request.POST.get('fromDate', '2001-01-01')
+	fromDate = datetime.datetime.strptime(fromDate, '%Y-%m-%d').date()
+	toDate = request.POST.get('toDate', '2001-04-01')
+	toDate = datetime.datetime.strptime(toDate, '%Y-%m-%d').date()
+	type_number = int(request.POST.get('type', 3))
+	bulkby_number = int(request.POST.get('bulkBy', 1))
+
+	# construction du contexte
+	if bulkby_number == 1 : # pas de bulk / bulk par jours
+		increment_date = datetime.timedelta(days=1)
+	elif bulkby_number == 2 : # bulk par quinzaine
+		increment_date = datetime.timedelta(days=15)
+
+	counts = []
+	dates = []
+	curr_date = fromDate
+	i = 0
+	while curr_date < toDate :
+		print("iteration")
+		next_date = curr_date + increment_date
+		queryset = Message.objects.filter(date__gte = curr_date, date__lte = next_date)
+		if type_number == 1 :
+			queryset = queryset.filter(sender__internal = True, type = 1)
+		elif type_number == 2 :
+			queryset = queryset.filter(sender__internal = True, type = 3)
+
+		dates.append(curr_date)
+		counts.append(len(queryset))
+		print(counts)
+		i += 1
+		curr_date = next_date
+
+	fig = plt.figure(figsize=(10,7))
+	ax = fig.add_subplot(111)
+
+	ax.plot(dates, counts)
+
+	buffer = BytesIO()
+	plt.savefig(buffer, format='png')
+	buffer.seek(0)
+	image_png = buffer.getvalue()
+	buffer.close()
+
+	graphic = base64.b64encode(image_png)
+	graphic = graphic.decode('utf-8')
+
+	# bilan affiché
+	bilan = [max(counts), dates[np.argmax(counts)]]
+
+
+	# context pour rendu de la page
+	context = {
+		'form': form,
+		'graphic': graphic,
+		'bilan' : bilan
+	}
+
+	return render(request, 'enron_app/achalandage.html', context)
 

@@ -27,6 +27,9 @@ class Message(models.Model) :
 	""" valeurs de "type" :
 	1 - receveurs internes seulement (@enron)
 	3 - les deux (de l'externe ET de l'interne)
+	Les formulaires/views permettent de choisir tous les messages, ce qui correspond à accepter
+	à la fois les messages seulement internes et les messages mixtes.
+	Il n'est PAS possible de demander les messages uniquement sortant vers l'externe.
 	"""
 
 

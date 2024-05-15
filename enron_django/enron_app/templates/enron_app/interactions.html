@@ -24,11 +24,12 @@
             <th>TOTAL INTERACTION</th>
             {% for ligne in table %}
             <tr>
-                <td>{{ligne.0}}</td>
-                <td>{{ligne.1}}</td>
+                <td>{{ligne.0.nom}}</td>
+                <td>{{ligne.1.nom}}</td>
                 <td>{{ligne.2}}</td>
                 <td>{{ligne.3}}</td>
                 <td>{{ligne.4}}</td>
+                <td><a href="{% url 'conversation' ligne.0.id ligne.1.id %}"> -> VIEW </a></td>
             </tr>
             {% endfor %}
         </table>

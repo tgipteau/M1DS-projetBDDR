@@ -1,0 +1,32 @@
+<html>
+    <head>
+        <title> EA - Conversation </title>
+        <style>
+
+        </style>
+    </head>
+
+    <body>
+        <a href=".../">Accueil</a>
+        <a href="./Interactions">Interactions</a>
+        <h1> CONVERSATION </h1>
+
+        <table>
+            <th>ID</th>
+            <th>DATE</th>
+            <th>SUJET</th>
+            <th>SENDER</th>
+            {% for message in messages %}
+            <tr>
+                <td>{{message.id}}</td>
+                <td>{{message.date}}</td>
+                <td>{{message.subject}}</td>
+                <td>{{message.sender.address}}</td>
+                <td><a href="{% url 'show_message' message.id %}"> -> VIEW </a></td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </body>
+
+</html>
