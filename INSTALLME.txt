@@ -1,0 +1,27 @@
+INSTALLATION DE LA BDD
+
+1 - Reglage bdd dans settings.py, dictionnaire DATABASES
+
+DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql_psycopg2',
+                'NAME': 'enron_db',
+                'USER': 'postgres',
+                'PASSWORD': 'postgres',
+                'HOST': 'localhost',
+                'PORT': '5433',
+                }
+        }
+
+
+2 - Dans maildir : déplacer le dossier "phanis-s" dans "panus-s"
+
+3 - On passe à l'action avec :
+
+	makemigrations
+	migrate
+	shell
+	run peuplement.py
+	run mail_parser2.py
+	runserver
+

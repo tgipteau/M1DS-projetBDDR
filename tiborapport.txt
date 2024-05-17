@@ -118,7 +118,7 @@ Beaucoup de requêtes nécessitent de faire une différence entre les messages i
  Quel enfer, certains mails ont des "To : email <.machin@enron.com>"
  sachant que l'adresse y est incomplète. On se débarasse de ces mails intraitables.
 
-Déjà il y a un prétraitement qui dégage les ces receveurs là, qui sont irrecevables (aha)
+Déjà il y a un prétraitement qui dégage les ces receveurs là, qui sont irrecevables
 Mais aussi, je met en place une séquence nettoyage, qui dégage les addresses mails qui ne contiennent pas "@".
 Il y en a 150 environ à dégager simplement
 
