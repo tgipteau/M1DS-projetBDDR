@@ -43,17 +43,19 @@ def basic_mining(request) :
 		print("method ELSE")
 
 		form = Basic_mining_form(initial={
-			'fromDate': '1999-01-01',
-			'toDate': '1999-04-01',
+			'fromDate': '2001-01-01',
+			'toDate': '2001-04-01',
 			'type': 1,
-			'sentBy': None
+			'sentBy': None,
+			'otherSentBy': None,
+			'subjectContains': None
 			})
 
-	fromDate = request.POST.get('fromDate','1999-01-01')
+	fromDate = request.POST.get('fromDate','2001-01-01')
 	fromDate = datetime.datetime.strptime(fromDate, '%Y-%m-%d').date()
 	print(f"{fromDate=}")
 
-	toDate = request.POST.get('toDate','1999-04-01')
+	toDate = request.POST.get('toDate','2001-04-01')
 	toDate = datetime.datetime.strptime(toDate, '%Y-%m-%d').date()
 	print(f"{toDate=}")
 
@@ -62,8 +64,11 @@ def basic_mining(request) :
 	print(f"{type(type_number)=}")
 
 	sentBy = request.POST.get('sentBy', '')
+	otherSentBy = request.POST.get('otherSentBy', '')
+	subjectContains = request.POST.get('subjectContains', '')
 
 
+	# gestion du filtre TYPE
 	if type_number == 1 :
 		internal_line = "and a.id = sender_id and a.internal = true\n"
 	elif type_number == 2 :
@@ -71,25 +76,37 @@ def basic_mining(request) :
 	else :
 		internal_line = "and a.id = sender_id\n"
 
+	# gestion du filtre SENT BY
 	if sentBy is not '' :
-		address_line = f"and a.address = \'{sentBy}\'\n"
+		if otherSentBy is not '' :
+			sent_by_line = f"and (a.address = \'{sentBy}\' or a.address = \'{otherSentBy}\')\n"
+		else :
+			sent_by_line = f"and a.address = \'{sentBy}\'\n"
 	else :
-		address_line = "and a.address is not null\n"
+		sent_by_line = ""
 
+	# gestion du SUBJECT CONTAINS
+	if subjectContains is not '' :
+		print(f"sujet demandé {subjectContains=}")
+		subject_contains_line = f"and subject like \'%%{subjectContains}%%\'\n"
+	else :
+		subject_contains_line = ""
 
 	messages = Message.objects.raw(
 		f"select m.id, date, subject, address as sent_by, internal \n"
 		f"from enron_app_message m, enron_app_mailaddress a\n"
 		f"where date between \'{fromDate}\'and \'{toDate}\'\n"
+		+ subject_contains_line
 		+ internal_line
-		+ address_line
+		+ sent_by_line
 		+ f"order by date\n"
 	)
 
 
 	context = {
 		'form': form,
-		'messages': messages
+		'messages': messages,
+		'nb_messages': len(messages)
 	}
 
 	return render(request, 'enron_app/basicmining.html', context)
@@ -285,10 +302,18 @@ def interactions(request) :
 
 	return render(request, 'enron_app/interactions.html', context)
 
-def conversation(request, employee_a_id, employee_b_id) :
+def conversation(request, employee_a_id, employee_b_id, fromDate, toDate) :
 
-	interaction1 = Interactions.objects.filter(emp_a_id=employee_a_id, emp_b_id=employee_b_id)
-	interaction2 = Interactions.objects.filter(emp_a_id=employee_b_id, emp_b_id=employee_a_id)
+	fromDate = datetime.datetime.strptime(fromDate, "%Y-%m-%d")
+	toDate = datetime.datetime.strptime(toDate, "%Y-%m-%d")
+
+	print(f"{fromDate=}")
+	print(f"{toDate=}")
+
+	interaction1 = Interactions.objects.filter(emp_a_id=employee_a_id, emp_b_id=employee_b_id,
+											   date__gte = fromDate, date__lte = toDate)
+	interaction2 = Interactions.objects.filter(emp_a_id=employee_b_id, emp_b_id=employee_a_id,
+											   date__gte = fromDate, date__lte = toDate)
 
 	messages = []
 	for i in interaction1 :
@@ -357,7 +382,7 @@ def achalandage(request) :
 	fig = plt.figure(figsize=(10,7))
 	ax = fig.add_subplot(111)
 
-	ax.plot(dates, counts)
+	ax.bar(dates, counts)
 
 	buffer = BytesIO()
 	plt.savefig(buffer, format='png')
@@ -381,3 +406,21 @@ def achalandage(request) :
 
 	return render(request, 'enron_app/achalandage.html', context)
 
+
+def mailmatcher(request) :
+
+	# récupération du formulaire
+	if request.method == 'POST':
+		print("method POST")
+		form = Mailmatcher_form(request.POST)
+
+	# cadre initial du formulaire
+	else:
+		form = Mailmatcher_form()
+
+	# context pour rendu de la page
+	context = {
+		'form': form,
+	}
+
+	return render(request, 'enron_app/mailmatcher.html', context)
